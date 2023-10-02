@@ -15,30 +15,30 @@ type Pair struct {
 	Value float64 `json:"value"`
 }
 
-type schalterStatus struct {
+type SchalterStatus struct {
 	Name     string `json:"name"`
 	State    string `json:"state"`
 	WidgetId string `json:"widgetId"`
 	Locked   int    `json:"locked"`
 }
 
-type queryResponse struct {
+type QueryResponse struct {
 	LineSets [][]Pair `json:"lineSets"`
 	Names    []string `json:"names"`
 	Amount   int      `json:"amount"`
 }
 
-type errorResponse struct {
+type ErrorResponse struct {
 	Error string `json:"error"`
 }
 
-type authResponse struct {
+type AuthResponse struct {
 	SessionToken string `json:"session_token"`
 	FirstName    string `json:"firstname"`
 	LastName     string `json:"lastname"`
 	Email        string `json:"email"`
 }
 
-type registerResponse struct {
+type RegisterResponse struct {
 	Success bool `json:"success"`
 }
