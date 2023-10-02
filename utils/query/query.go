@@ -49,17 +49,17 @@ func Query(w http.ResponseWriter, r *http.Request) {
 		}
 
 		//check if Query is valid
-		Query := t["Query"].(string)
+		query := t["query"].(string)
 
-		if Query == "" {
-			SendError(w, http.StatusBadRequest, errors.New("no Query"))
+		if query == "" {
+			SendError(w, http.StatusBadRequest, errors.New("no query"))
 			return
 		}
 
 		//Query influxdb
-		resp, err := QueryInfluxDB(session_token, Query)
+		resp, err := QueryInfluxDB(session_token, query)
 		if err != nil {
-			SendError(w, http.StatusInternalServerError, fmt.Errorf("error Querying influxdb: %s", err))
+			SendError(w, http.StatusInternalServerError, fmt.Errorf("error querying influxdb: %s", err))
 			return
 		}
 
@@ -84,7 +84,7 @@ func QueryInfluxDB(session_token string, Query string) (QueryResponse, error) {
 	//http url for influxdb
 	API_URL := os.Getenv("API_URL")
 	ORG_ID := os.Getenv("ORG_ID")
-	httpposturl := API_URL + "/api/v2/Query?orgID=" + ORG_ID
+	httpposturl := API_URL + "/api/v2/query?orgID=" + ORG_ID
 
 	//create http request
 	req, err := http.NewRequest("POST", httpposturl, bytes.NewBufferString(Query))

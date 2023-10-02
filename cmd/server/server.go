@@ -36,10 +36,10 @@ func main() {
 		fmt.Printf(models.Blue + "TEST MODE ACTIVE\n" + models.Reset + "")
 	}*/
 
-	http.HandleFunc("/Register", register.Register)
-	http.HandleFunc("/Auth", auth.Auth)
-	http.HandleFunc("/Query", query.Query)
-	http.HandleFunc("/Schalter", schalter.SchalterControl)
+	http.HandleFunc("/register", register.Register)
+	http.HandleFunc("/auth", auth.Auth)
+	http.HandleFunc("/query", query.Query)
+	http.HandleFunc("/schalter", schalter.SchalterControl)
 
 	err := http.ListenAndServe(":3333", nil)
 

@@ -73,7 +73,7 @@ func SchalterControl(w http.ResponseWriter, r *http.Request) {
 		}
 
 		//sync with Schalter db
-		dbSchalterStatus, err := getSchalterStatus(SchalterStatusRes.Name)
+		dbSchalterStatus, err := GetSchalterStatus(SchalterStatusRes.Name)
 		if err != nil {
 			SendError(w, http.StatusInternalServerError, fmt.Errorf("error syncing Schalter data: %s", err))
 			return
@@ -94,22 +94,22 @@ func SchalterControl(w http.ResponseWriter, r *http.Request) {
 		}
 
 		//update Schalter db
-		err = updateSchalterStatus(SchalterStatusRes)
+		err = UpdateSchalterStatus(SchalterStatusRes)
 		if err != nil {
-			SendError(w, http.StatusInternalServerError, fmt.Errorf("error updating Schalter status: %s", err))
+			SendError(w, http.StatusInternalServerError, fmt.Errorf("error updating schalter status: %s", err))
 			return
 		}
 
 		var SchalterRawData string
-		SchalterRawData, err = getRawSchalterStatus()
+		SchalterRawData, err = GetRawSchalterStatus()
 		if err != nil {
-			SendError(w, http.StatusInternalServerError, fmt.Errorf("error getting raw Schalter status: %s", err))
+			SendError(w, http.StatusInternalServerError, fmt.Errorf("error getting raw schalter status: %s", err))
 			return
 		}
 		var SchalterData []SchalterStatus
-		SchalterData, err = parseSchalterStatus(SchalterRawData)
+		SchalterData, err = ParseSchalterStatus(SchalterRawData)
 		if err != nil {
-			SendError(w, http.StatusInternalServerError, fmt.Errorf("error parsing Schalter status: %s", err))
+			SendError(w, http.StatusInternalServerError, fmt.Errorf("error parsing schalter status: %s", err))
 			return
 		}
 
@@ -120,7 +120,7 @@ func SchalterControl(w http.ResponseWriter, r *http.Request) {
 			//Query Schalter
 			err = SchalterControllFunc(SchalterStatusRes.Name, SchalterStatusRes.State)
 			if err != nil {
-				SendError(w, http.StatusInternalServerError, fmt.Errorf("error Querying Schalter: %s", err))
+				SendError(w, http.StatusInternalServerError, fmt.Errorf("error querying schalter: %s", err))
 				return
 			}
 			return
@@ -129,12 +129,12 @@ func SchalterControl(w http.ResponseWriter, r *http.Request) {
 			//Query Schalter
 			err = SchalterControllFunc(SchalterData[i].Name, "ON")
 			if err != nil {
-				SendError(w, http.StatusInternalServerError, fmt.Errorf("error Querying Schalter: %s", err))
+				SendError(w, http.StatusInternalServerError, fmt.Errorf("error querying schalter: %s", err))
 				return
 			}
 			err = SchalterControllFunc(SchalterData[i+1].Name, "ON")
 			if err != nil {
-				SendError(w, http.StatusInternalServerError, fmt.Errorf("error Querying Schalter: %s", err))
+				SendError(w, http.StatusInternalServerError, fmt.Errorf("error querying schalter: %s", err))
 				return
 			}
 			timerDuration = 45 * time.Second
@@ -144,12 +144,12 @@ func SchalterControl(w http.ResponseWriter, r *http.Request) {
 			//Query Schalter
 			err = SchalterControllFunc(SchalterData[i].Name, "OFF")
 			if err != nil {
-				SendError(w, http.StatusInternalServerError, fmt.Errorf("error Querying Schalter: %s", err))
+				SendError(w, http.StatusInternalServerError, fmt.Errorf("error querying qchalter: %s", err))
 				return
 			}
 			err = SchalterControllFunc(SchalterData[i+1].Name, "ON")
 			if err != nil {
-				SendError(w, http.StatusInternalServerError, fmt.Errorf("error Querying Schalter: %s", err))
+				SendError(w, http.StatusInternalServerError, fmt.Errorf("error querying qchalter: %s", err))
 				return
 			}
 			timerDuration = 55 * time.Second
@@ -161,12 +161,12 @@ func SchalterControl(w http.ResponseWriter, r *http.Request) {
 			//Query Schalter
 			err = SchalterControllFunc(SchalterData[i].Name, "OFF")
 			if err != nil {
-				SendError(w, http.StatusInternalServerError, fmt.Errorf("error Querying Schalter: %s", err))
+				SendError(w, http.StatusInternalServerError, fmt.Errorf("error querying Schalter: %s", err))
 				return
 			}
 			err = SchalterControllFunc(SchalterData[i+1].Name, "OFF")
 			if err != nil {
-				SendError(w, http.StatusInternalServerError, fmt.Errorf("error Querying Schalter: %s", err))
+				SendError(w, http.StatusInternalServerError, fmt.Errorf("error querying Schalter: %s", err))
 				return
 			}
 		})
@@ -174,7 +174,7 @@ func SchalterControl(w http.ResponseWriter, r *http.Request) {
 		return
 	case "GET":
 		//get Schalter status
-		status, err := getSchalterStatuses()
+		status, err := GetSchalterStatuses()
 		if err != nil {
 			SendError(w, http.StatusInternalServerError, fmt.Errorf("error getting Schalter status: %s", err))
 			return
@@ -224,7 +224,7 @@ func SchalterControllFunc(target string, state string) error {
 	return nil
 }
 
-func getSchalterStatuses() ([]SchalterStatus, error) {
+func GetSchalterStatuses() ([]SchalterStatus, error) {
 	//db connection
 	DB_NAME := os.Getenv("DB_NAME")
 	DB_PASSWORD := os.Getenv("DB_PASSWORD")
@@ -272,7 +272,7 @@ func SchalterDataContains(SchalterData []SchalterStatus, widgetId string) int {
 	return -1
 }
 
-func updateSchalterStatus(SchalterStatusRes SchalterStatus, widgetId ...string) error {
+func UpdateSchalterStatus(SchalterStatusRes SchalterStatus, widgetId ...string) error {
 	//db connection
 	DB_NAME := os.Getenv("DB_NAME")
 	DB_PASSWORD := os.Getenv("DB_PASSWORD")
@@ -300,7 +300,7 @@ func updateSchalterStatus(SchalterStatusRes SchalterStatus, widgetId ...string) 
 	return nil
 }
 
-func getSchalterStatus(name string, widgetId ...string) (SchalterStatus, error) {
+func GetSchalterStatus(name string, widgetId ...string) (SchalterStatus, error) {
 	//db connection
 	DB_NAME := os.Getenv("DB_NAME")
 	DB_PASSWORD := os.Getenv("DB_PASSWORD")
@@ -341,7 +341,7 @@ func getSchalterStatus(name string, widgetId ...string) (SchalterStatus, error) 
 	return SchalterStatus{}, errors.New("syncSchalterData: no Schalter data found")
 }
 
-func getRawSchalterStatus() (string, error) {
+func GetRawSchalterStatus() (string, error) {
 	//http url for influxdb
 	Schalter_IP := os.Getenv("schalter_IP")
 	httpposturl := Schalter_IP + "basicui/app?w=0300&sitemap=traumhaus"
@@ -367,7 +367,7 @@ func getRawSchalterStatus() (string, error) {
 	return respStr, nil
 }
 
-func parseSchalterStatus(rawData string) ([]SchalterStatus, error) {
+func ParseSchalterStatus(rawData string) ([]SchalterStatus, error) {
 	SchalterStatusLines := strings.Split(rawData, "\n")
 	SchalterStatusRes := make([]SchalterStatus, 0)
 	var widgetId string
@@ -387,9 +387,9 @@ func parseSchalterStatus(rawData string) ([]SchalterStatus, error) {
 }
 
 func SchalterEventStream() {
-	Schalter_IP := os.Getenv("schalter_IP")
+	SCHALTER_IP := os.Getenv("SCHALTER_IP")
 
-	subscribeUrl := Schalter_IP + "rest/sitemaps/events/subscribe"
+	subscribeUrl := SCHALTER_IP + "rest/sitemaps/events/subscribe"
 	req, err := http.NewRequest("POST", subscribeUrl, nil)
 	if err != nil {
 		log.Printf(Red+"error creating request: %s\n"+Reset, err)
@@ -448,9 +448,9 @@ func SchalterEventStream() {
 		}
 
 		if strings.Contains(name, "Licht") {
-			err = updateSchalterStatus(SchalterStatus{Name: name, State: state, Locked: 0})
+			err = UpdateSchalterStatus(SchalterStatus{Name: name, State: state, Locked: 0})
 			if err != nil {
-				log.Printf(Red+"error updating Schalter status: %s\n"+Reset, err)
+				log.Printf(Red+"error updating schalter status: %s\n"+Reset, err)
 				return
 			}
 			if state == "ON" {
@@ -471,29 +471,29 @@ func SchalterEventStream() {
 		widgetId = "0" + strconv.Itoa(widgetIdInt-1)
 
 		// get Schalter status from html
-		rawSchalterStatus, err := getRawSchalterStatus()
+		rawSchalterStatus, err := GetRawSchalterStatus()
 		if err != nil {
-			log.Printf(Red+"error getting raw Schalter status: %s\n"+Reset, err)
+			log.Printf(Red+"error getting raw schalter status: %s\n"+Reset, err)
 			return
 		}
 
-		SchalterStatuses, err := parseSchalterStatus(rawSchalterStatus)
+		SchalterStatuses, err := ParseSchalterStatus(rawSchalterStatus)
 		if err != nil {
-			log.Printf(Red+"error parsing Schalter status: %s\n"+Reset, err)
+			log.Printf(Red+"error parsing schalter status: %s\n"+Reset, err)
 			return
 		}
 
 		//chrck if schater on or off
 		SchalterStatusIndex := SchalterDataContains(SchalterStatuses, widgetId)
 		if SchalterStatusIndex == -1 {
-			log.Printf(Red+"error getting Schalter status: %s\n"+Reset, err)
+			log.Printf(Red+"error getting schalter status: %s\n"+Reset, err)
 			return
 		}
 		richtungState := SchalterStatuses[SchalterStatusIndex].State
 
-		dbSchalterStatus, err := getSchalterStatus(name, widgetId)
+		dbSchalterStatus, err := GetSchalterStatus(name, widgetId)
 		if err != nil {
-			log.Printf(Red+"error syncing Schalter data: %s\n"+Reset, err)
+			log.Printf(Red+"error syncing schalter data: %s\n"+Reset, err)
 			return
 		}
 
@@ -503,11 +503,11 @@ func SchalterEventStream() {
 
 		//update Schalter status
 		if state == "ON" {
-			err = updateSchalterStatus(SchalterStatus{Name: name, State: richtungState, Locked: 60}, widgetId)
+			err = UpdateSchalterStatus(SchalterStatus{Name: name, State: richtungState, Locked: 60}, widgetId)
 			log.Printf("schalterCommand name: " + name + Red + " state: " + richtungState + Reset + "\n")
 		}
 		if err != nil {
-			log.Printf(Red+"error updating Schalter status: %s\n"+Reset, err)
+			log.Printf(Red+"error updating schalter status: %s\n"+Reset, err)
 			return
 		}
 	})
