@@ -116,3 +116,19 @@ func First[T, U any](val T, _ U) T {
 	//returns first value
 	return val
 }
+
+// TODO: replace all db connections with this function
+func DBConnection() (*sql.DB, error) {
+	//db connection
+	DB_NAME := os.Getenv("DB_NAME")
+	DB_PASSWORD := os.Getenv("DB_PASSWORD")
+	DB_USERNAME := os.Getenv("DB_USERNAME")
+	DB_IP := os.Getenv("DB_IP")
+
+	db, err := sql.Open("mysql",
+		DB_USERNAME+":"+DB_PASSWORD+"@tcp("+DB_IP+":3306)/"+DB_NAME)
+	if err != nil {
+		return nil, fmt.Errorf("error opening db: %s", err)
+	}
+	return db, nil
+}

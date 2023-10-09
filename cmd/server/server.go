@@ -11,12 +11,13 @@ import (
 	"github.com/joho/godotenv"
 
 	models "github.com/GineHyte/server/models"
+	"github.com/GineHyte/server/utils/scripter"
 	tools "github.com/GineHyte/server/utils/tools"
 
 	auth "github.com/GineHyte/server/utils/auth"
 	query "github.com/GineHyte/server/utils/query"
 	register "github.com/GineHyte/server/utils/register"
-	schalter "github.com/GineHyte/server/utils/schaltercontrol"
+	schalter "github.com/GineHyte/server/utils/schalter"
 )
 
 /* main */
@@ -40,6 +41,8 @@ func main() {
 	http.HandleFunc("/auth", auth.Auth)
 	http.HandleFunc("/query", query.Query)
 	http.HandleFunc("/schalter", schalter.SchalterControl)
+	http.HandleFunc("/script", scripter.Script)
+	http.HandleFunc("/controlScript", scripter.ControlScript)
 
 	err := http.ListenAndServe(":3333", nil)
 

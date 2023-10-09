@@ -1,4 +1,4 @@
-package Schaltercontrol
+package schalter
 
 import (
 	"bytes"
@@ -15,6 +15,7 @@ import (
 
 	. "github.com/GineHyte/server/models"
 	. "github.com/GineHyte/server/utils/tools"
+
 	"github.com/r3labs/sse/v2"
 )
 
@@ -503,8 +504,13 @@ func SchalterEventStream() {
 
 		//update Schalter status
 		if state == "ON" {
-			err = UpdateSchalterStatus(SchalterStatus{Name: name, State: richtungState, Locked: 60}, widgetId)
-			log.Printf("schalterCommand name: " + name + Red + " state: " + richtungState + Reset + "\n")
+			if richtungState == "ON" {
+				err = UpdateSchalterStatus(SchalterStatus{Name: name, State: richtungState, Locked: 50}, widgetId)
+				log.Printf("schalterCommand name: " + name + Green + " state: " + richtungState + Reset + "\n")
+			} else {
+				err = UpdateSchalterStatus(SchalterStatus{Name: name, State: richtungState, Locked: 60}, widgetId)
+				log.Printf("schalterCommand name: " + name + Red + " state: " + richtungState + Reset + "\n")
+			}
 		}
 		if err != nil {
 			log.Printf(Red+"error updating schalter status: %s\n"+Reset, err)

@@ -12,6 +12,7 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 
 	. "github.com/GineHyte/server/models"
+	scripter "github.com/GineHyte/server/utils/scripter"
 	. "github.com/GineHyte/server/utils/tools"
 )
 
@@ -44,6 +45,10 @@ func Auth(w http.ResponseWriter, r *http.Request) {
 			SendError(w, http.StatusInternalServerError, fmt.Errorf("error creating session: %s", err))
 			return
 		}
+
+		//start all scripts
+		scripter.StartAllDBStartedScripts(session_token)
+		log.Printf("Started all scripts for %s\n", t["username"].(string))
 
 		//get user data
 		firstname, lastname, email, err := GetUserData(influx_token)
