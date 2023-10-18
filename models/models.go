@@ -16,10 +16,12 @@ type Pair struct {
 }
 
 type SchalterStatus struct {
-	Name     string `json:"name"`
-	State    string `json:"state"`
-	WidgetId string `json:"widgetId"`
-	Locked   int    `json:"locked"`
+	Name           string  `json:"name"`
+	State          string  `json:"state"`
+	WidgetId       string  `json:"widgetId"`
+	Locked         int     `json:"locked"`
+	ScriptState    bool    `json:"scriptState"`
+	CurrentCommand *string `json:"currentCommand"`
 }
 
 type QueryResponse struct {

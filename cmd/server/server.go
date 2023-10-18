@@ -42,7 +42,7 @@ func main() {
 	http.HandleFunc("/query", query.Query)
 	http.HandleFunc("/schalter", schalter.SchalterControl)
 	http.HandleFunc("/script", scripter.Script)
-	http.HandleFunc("/controlScript", scripter.ControlScript)
+	http.HandleFunc("/control_script", scripter.ControlScript)
 
 	err := http.ListenAndServe(":3333", nil)
 

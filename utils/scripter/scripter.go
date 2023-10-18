@@ -66,7 +66,6 @@ func Script(w http.ResponseWriter, r *http.Request) {
 		}
 
 		//stop script
-		println("stop script started")
 		err = StopScript(widgetId)
 		if err != nil {
 			tools.SendError(w, http.StatusInternalServerError, fmt.Errorf("error stopping script: %s", err))
@@ -74,7 +73,6 @@ func Script(w http.ResponseWriter, r *http.Request) {
 		}
 
 		//set script
-		println("db set script started")
 		err = DBSetScript(script, widgetId)
 		if err != nil {
 			tools.SendError(w, http.StatusInternalServerError, fmt.Errorf("error setting script: %s", err))
@@ -82,7 +80,6 @@ func Script(w http.ResponseWriter, r *http.Request) {
 		}
 
 		//start script
-		println("start script started")
 		err = StartScript(widgetId, session_token)
 
 		if err != nil {
@@ -97,7 +94,6 @@ func Script(w http.ResponseWriter, r *http.Request) {
 	case "GET":
 		//get script
 		script, err := DBGetScript(r.URL.Query().Get("widgetId"))
-		println(r.URL.Query().Get("widgetId"))
 		if err != nil {
 			tools.SendError(w, http.StatusInternalServerError, fmt.Errorf("error getting script: %s", err))
 			return
@@ -176,7 +172,6 @@ func ControlScript(w http.ResponseWriter, r *http.Request) {
 }
 
 func DBGetScript(widgetId string) (string, error) {
-	println("db get script init")
 	//db connection
 	db, err := tools.DBConnection()
 	if err != nil {
@@ -191,12 +186,10 @@ func DBGetScript(widgetId string) (string, error) {
 		return "", fmt.Errorf("error getting script: %s", err)
 	}
 
-	println("db get script done")
 	return script, nil
 }
 
 func DBSetScript(script string, widgetId string) error {
-	println("db set script init")
 	//db connection
 	db, err := tools.DBConnection()
 	if err != nil {
@@ -210,11 +203,23 @@ func DBSetScript(script string, widgetId string) error {
 		return fmt.Errorf("error setting script: %s", err)
 	}
 
-	println("db set script done")
 	return nil
 }
 
 func ExecuteCommand(command string, widgetId string, session_token string) error {
+	//db connection
+	db, err := tools.DBConnection()
+	if err != nil {
+		return fmt.Errorf("error opening db: %s", err)
+	}
+	defer db.Close()
+
+	//set current command
+	_, err = db.Exec("UPDATE schalter SET currentCommand = ? WHERE widgetId = ?", command, widgetId)
+	if err != nil {
+		return fmt.Errorf("error setting command: %s", err)
+	}
+
 	//get scriptState
 	scriptState, err := GetScriptState(widgetId)
 	if err != nil {
@@ -222,12 +227,8 @@ func ExecuteCommand(command string, widgetId string, session_token string) error
 	}
 
 	if scriptState == "0" {
+		wg = sync.WaitGroup{}
 		return nil
-	}
-
-	//waitgroup
-	if wg != (sync.WaitGroup{}) {
-		defer wg.Done()
 	}
 
 	//get command
@@ -237,38 +238,29 @@ func ExecuteCommand(command string, widgetId string, session_token string) error
 	case "WAIT":
 		waitTime, _ := strconv.Atoi(strings.Split(command, " ")[1])
 		time.Sleep(time.Duration(waitTime) * time.Second)
-		return nil
 	case "ON", "OFF":
-		err = OnOff(command, commandType, widgetId)
+		err = onOff(command, commandType, widgetId)
 		if err != nil {
+			wg = sync.WaitGroup{}
 			return fmt.Errorf("error executing command: %s", err)
 		}
 	case "WHILE":
 		condition := strings.Split(command, " ")[1:4]
 		statements := strings.Split(strings.Join(strings.Split(command, " ")[4:], " "), ";")
-		err = WhileLoop(condition, statements, widgetId, session_token)
+		err = whileLoop(condition, statements, widgetId, session_token)
 		if err != nil {
+			wg = sync.WaitGroup{}
 			return fmt.Errorf("error executing command: %s", err)
 		}
 	}
 
+	//waitgroup reset
+	wg = sync.WaitGroup{}
+
 	return nil
 }
 
-func OnOff(command string, commandType string, widgetId string) error {
-	//db connection
-	db, err := tools.DBConnection()
-	if err != nil {
-		return fmt.Errorf("error opening db: %s", err)
-	}
-	defer db.Close()
-
-	//set current command
-	_, err = db.Exec("UPDATE schalter SET command = ? WHERE widgetId = ?", command, widgetId)
-	if err != nil {
-		return fmt.Errorf("error setting command: %s", err)
-	}
-
+func onOff(command string, commandType string, widgetId string) error {
 	SchalterStatusRes := models.SchalterStatus{}
 	SchalterStatusRes.Name = ""
 	SchalterStatusRes.State = commandType
@@ -363,7 +355,7 @@ func OnOff(command string, commandType string, widgetId string) error {
 	return nil
 }
 
-func WhileLoop(condition []string, statements []string, widgetId string, session_token string) error {
+func whileLoop(condition []string, statements []string, widgetId string, session_token string) error {
 	//parse condition
 	param1 := condition[0]
 	param2 := condition[2]
@@ -404,7 +396,6 @@ func WhileLoop(condition []string, statements []string, widgetId string, session
 	}
 	func() error {
 		for {
-			println("while loop")
 			wgWhile.Wait()
 			//get scriptState
 			scriptState, err := GetScriptState(widgetId)
@@ -429,7 +420,6 @@ func WhileLoop(condition []string, statements []string, widgetId string, session
 					tParam2 = time.Now().UTC().Add(2 * time.Hour)
 					log.Printf("WHILE LOOP: %s (%s) %s %s\n", tParam1, name, operator, tParam2)
 				} else {
-					println(name, getDataFor)
 					lastValue, err := GetLastValue(name, session_token)
 					if err != nil {
 						return fmt.Errorf("error getting last value: %s", err)
@@ -513,7 +503,9 @@ func WhileLoop(condition []string, statements []string, widgetId string, session
 					return nil
 				}
 			}
-			wgWhile.Done()
+			if (wgWhile != sync.WaitGroup{}) {
+				wgWhile.Done()
+			}
 		}
 	}()
 
@@ -556,7 +548,6 @@ func GetLastValue(name string, session_token string) (float64, error) {
 }
 
 func StartScript(widgetId string, session_token string) error {
-	println("start script init")
 	//set scriptState
 	err := SetScriptState(widgetId, "1")
 	if err != nil {
@@ -577,35 +568,42 @@ func StartScript(widgetId string, session_token string) error {
 			fmt.Println(err)
 		}
 		wgWhile = sync.WaitGroup{}
-		fmt.Print("script finished\n")
+		err = StopScript(widgetId)
+		if err != nil {
+			fmt.Println(err)
+		}
 	}()
-	println("start script done")
 	return nil
 }
 
 func StopScript(widgetId string) error {
-	println("stop script init")
 	wgWhile.Wait()
-	wgWhile.Add(1)
+
+	//TODO: make func
+	//db connection
+	db, err := tools.DBConnection()
+	if err != nil {
+		return fmt.Errorf("error opening db: %s", err)
+	}
+	defer db.Close()
+
+	//set current command
+	_, err = db.Exec("UPDATE schalter SET currentCommand = ? WHERE widgetId = ?", nil, widgetId)
+	if err != nil {
+		return fmt.Errorf("error setting command: %s", err)
+	}
+
 	//set scriptState
-	err := SetScriptState(widgetId, "0")
+	err = SetScriptState(widgetId, "0")
 	if err != nil {
 		return fmt.Errorf("error setting scriptState: %s", err)
 	}
-	wgWhile.Done()
-	println("stop script done")
+	wgWhile = sync.WaitGroup{}
 	return nil
 }
 
 func ScriptBus(widgetId string, script string, session_token string) <-chan error {
-	//db connection
-	db, err := tools.DBConnection()
-	if err != nil {
-		tools.SendError(nil, http.StatusInternalServerError, fmt.Errorf("error opening db: %s", err))
-	}
-	defer db.Close()
-
-	//get command
+	//create channel
 	r := make(chan error)
 	go func() {
 		for _, command := range strings.Split(script, "\n") {

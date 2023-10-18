@@ -14,6 +14,7 @@ import (
 	"time"
 
 	. "github.com/GineHyte/server/models"
+	"github.com/GineHyte/server/utils/tools"
 	. "github.com/GineHyte/server/utils/tools"
 
 	"github.com/r3labs/sse/v2"
@@ -64,6 +65,8 @@ func SchalterControl(w http.ResponseWriter, r *http.Request) {
 				SchalterStatusRes.Locked, _ = strconv.Atoi(value.(string))
 			case "widgetId":
 				SchalterStatusRes.WidgetId, _ = value.(string)
+			case "scriptState":
+				SchalterStatusRes.ScriptState, _ = value.(bool)
 			}
 		}
 
@@ -227,40 +230,38 @@ func SchalterControllFunc(target string, state string) error {
 
 func GetSchalterStatuses() ([]SchalterStatus, error) {
 	//db connection
-	DB_NAME := os.Getenv("DB_NAME")
-	DB_PASSWORD := os.Getenv("DB_PASSWORD")
-	DB_USERNAME := os.Getenv("DB_USERNAME")
-	DB_IP := os.Getenv("DB_IP")
-
-	db, err := sql.Open("mysql",
-		DB_USERNAME+":"+DB_PASSWORD+"@tcp("+DB_IP+":3306)/"+DB_NAME)
+	db, err := tools.DBConnection()
 	if err != nil {
-		return nil, fmt.Errorf("getSchalterStatus: %s", err)
+		return []SchalterStatus{}, fmt.Errorf("getSchalterStatuses: %s", err)
 	}
 	defer db.Close()
 
-	//get Schalter status
-	Schalter_status, err := db.Query("SELECT name, state, widgetId, locked FROM sys.Schalter")
+	//get all schalter status
+	var Schalter_data *sql.Rows
+	Schalter_data, err = db.Query("SELECT name, state, widgetId, locked, scriptState, currentCommand FROM sys.Schalter")
 	if err != nil {
-		return nil, fmt.Errorf("getSchalterStatus: %s", err)
+		return []SchalterStatus{}, fmt.Errorf("getSchalterStatuses: %s", err)
 	}
-	defer Schalter_status.Close()
+	defer Schalter_data.Close()
 
-	var SchalterStatusRes []SchalterStatus
-
-	for Schalter_status.Next() {
+	SchalterStatuses := make([]SchalterStatus, 0)
+	for Schalter_data.Next() {
 		var name string
 		var state string
 		var widgetId string
 		var locked int
-		err := Schalter_status.Scan(&name, &state, &widgetId, &locked)
+		var scriptState bool
+		var currentCommand *string
+
+		err := Schalter_data.Scan(&name, &state, &widgetId, &locked, &scriptState, &currentCommand)
 		if err != nil {
-			return nil, fmt.Errorf("getSchalterStatus: %s", err)
+			return []SchalterStatus{}, fmt.Errorf("getSchalterStatuses: %s", err)
 		}
-		SchalterStatusRes = append(SchalterStatusRes, SchalterStatus{Name: name, State: state, WidgetId: widgetId, Locked: locked})
+
+		SchalterStatuses = append(SchalterStatuses, SchalterStatus{Name: name, State: state, WidgetId: widgetId, Locked: locked, ScriptState: scriptState, CurrentCommand: currentCommand})
 	}
 
-	return SchalterStatusRes, nil
+	return SchalterStatuses, nil
 }
 
 func SchalterDataContains(SchalterData []SchalterStatus, widgetId string) int {
@@ -318,9 +319,9 @@ func GetSchalterStatus(name string, widgetId ...string) (SchalterStatus, error) 
 	var Schalter_data *sql.Rows
 	//read data from db and compare with Schalter data
 	if len(widgetId) > 0 {
-		Schalter_data, err = db.Query("SELECT name, state, widgetId, locked FROM sys.Schalter WHERE widgetId = ?", widgetId[0])
+		Schalter_data, err = db.Query("SELECT name, state, widgetId, locked, scriptState, currentCommand FROM sys.Schalter WHERE widgetId = ?", widgetId[0])
 	} else {
-		Schalter_data, err = db.Query("SELECT name, state, widgetId, locked FROM sys.Schalter WHERE name = ?", name)
+		Schalter_data, err = db.Query("SELECT name, state, widgetId, locked, scriptState, currentCommand FROM sys.Schalter WHERE name = ?", name)
 	}
 	if err != nil {
 		return SchalterStatus{}, fmt.Errorf("syncSchalterData: %s", err)
@@ -332,11 +333,14 @@ func GetSchalterStatus(name string, widgetId ...string) (SchalterStatus, error) 
 		var state string
 		var widgetId string
 		var locked int
-		err := Schalter_data.Scan(&name, &state, &widgetId, &locked)
+		var scriptState bool
+		var currentCommand *string
+
+		err := Schalter_data.Scan(&name, &state, &widgetId, &locked, &scriptState, &currentCommand)
 		if err != nil {
 			return SchalterStatus{}, fmt.Errorf("syncSchalterData: %s", err)
 		}
-		SchalterStatusRes := SchalterStatus{Name: name, State: state, WidgetId: widgetId, Locked: locked}
+		SchalterStatusRes := SchalterStatus{Name: name, State: state, WidgetId: widgetId, Locked: locked, ScriptState: scriptState, CurrentCommand: currentCommand}
 		return SchalterStatusRes, nil
 	}
 	return SchalterStatus{}, errors.New("syncSchalterData: no Schalter data found")
@@ -375,9 +379,9 @@ func ParseSchalterStatus(rawData string) ([]SchalterStatus, error) {
 	for _, line := range SchalterStatusLines {
 		if strings.Contains(line, "<input type=\"checkbox\"") {
 			if strings.Contains(line, "checked") {
-				SchalterStatusRes = append(SchalterStatusRes, SchalterStatus{strings.Split(strings.Split(line, "id=\"oh-checkbox-")[1], "\"")[0], "ON", widgetId, 0})
+				SchalterStatusRes = append(SchalterStatusRes, SchalterStatus{strings.Split(strings.Split(line, "id=\"oh-checkbox-")[1], "\"")[0], "ON", widgetId, 0, false, nil})
 			} else {
-				SchalterStatusRes = append(SchalterStatusRes, SchalterStatus{strings.Split(strings.Split(line, "id=\"oh-checkbox-")[1], "\"")[0], "OFF", widgetId, 0})
+				SchalterStatusRes = append(SchalterStatusRes, SchalterStatus{strings.Split(strings.Split(line, "id=\"oh-checkbox-")[1], "\"")[0], "OFF", widgetId, 0, false, nil})
 			}
 		}
 		if strings.Contains(line, "data-widget-id=") {
