@@ -1,13 +1,11 @@
 package Auth
 
 import (
-	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
 	"net/http"
-	"os"
 
 	_ "github.com/go-sql-driver/mysql"
 
@@ -70,13 +68,7 @@ func Auth(w http.ResponseWriter, r *http.Request) {
 func GetInfluxToken(username string, password string) (string, error) {
 	//get influxdb token from username and password
 	//db connection
-	DB_NAME := os.Getenv("DB_NAME")
-	DB_PASSWORD := os.Getenv("DB_PASSWORD")
-	DB_USERNAME := os.Getenv("DB_USERNAME")
-	DB_IP := os.Getenv("DB_IP")
-
-	db, err := sql.Open("mysql",
-		DB_USERNAME+":"+DB_PASSWORD+"@tcp("+DB_IP+":3306)/"+DB_NAME)
+	db, err := DBConnection()
 	if err != nil {
 		return "", fmt.Errorf("GetInfluxToken %s: %s", username, err)
 	}
@@ -101,13 +93,7 @@ func GetInfluxToken(username string, password string) (string, error) {
 func CreateSession(influx_token string) (string, error) {
 	//create session with influx token
 	//db connection
-	DB_NAME := os.Getenv("DB_NAME")
-	DB_PASSWORD := os.Getenv("DB_PASSWORD")
-	DB_USERNAME := os.Getenv("DB_USERNAME")
-	DB_IP := os.Getenv("DB_IP")
-
-	db, err := sql.Open("mysql",
-		DB_USERNAME+":"+DB_PASSWORD+"@tcp("+DB_IP+":3306)/"+DB_NAME)
+	db, err := DBConnection()
 	if err != nil {
 		return "", fmt.Errorf("CreateSession %s: %s", influx_token, err)
 	}
@@ -145,13 +131,7 @@ func CreateSession(influx_token string) (string, error) {
 func GetUserData(influx_token string) (string, string, string, error) {
 	//get user data from influx token
 	//db connection
-	DB_NAME := os.Getenv("DB_NAME")
-	DB_PASSWORD := os.Getenv("DB_PASSWORD")
-	DB_USERNAME := os.Getenv("DB_USERNAME")
-	DB_IP := os.Getenv("DB_IP")
-
-	db, err := sql.Open("mysql",
-		DB_USERNAME+":"+DB_PASSWORD+"@tcp("+DB_IP+":3306)/"+DB_NAME)
+	db, err := DBConnection()
 	if err != nil {
 		return "", "", "", fmt.Errorf("GetUserData %s: %s", influx_token, err)
 	}

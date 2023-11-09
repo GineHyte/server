@@ -2,7 +2,6 @@ package Register
 
 import (
 	"bytes"
-	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -126,13 +125,7 @@ func CreateInfluxDBToken(username string) (string, error) {
 func CheckIfAccountExists(username string, email string) (bool, error) {
 	//check if account already exists
 	//db connection
-	DB_NAME := os.Getenv("DB_NAME")
-	DB_PASSWORD := os.Getenv("DB_PASSWORD")
-	DB_USERNAME := os.Getenv("DB_USERNAME")
-	DB_IP := os.Getenv("DB_IP")
-
-	db, err := sql.Open("mysql",
-		DB_USERNAME+":"+DB_PASSWORD+"@tcp("+DB_IP+":3306)/"+DB_NAME)
+	db, err := DBConnection()
 	if err != nil {
 		return false, fmt.Errorf("CheckIfAccountExists %s: %s", username, err)
 	}
@@ -153,13 +146,7 @@ func CheckIfAccountExists(username string, email string) (bool, error) {
 func CreateDBAccount(username string, password string, firstname string, lastname string, email string, influx_token string) error {
 	//create db account with username, password, firstname, lastname, email and influx_token
 	//db connection
-	DB_NAME := os.Getenv("DB_NAME")
-	DB_PASSWORD := os.Getenv("DB_PASSWORD")
-	DB_USERNAME := os.Getenv("DB_USERNAME")
-	DB_IP := os.Getenv("DB_IP")
-
-	db, err := sql.Open("mysql",
-		DB_USERNAME+":"+DB_PASSWORD+"@tcp("+DB_IP+":3306)/"+DB_NAME)
+	db, err := DBConnection()
 	if err != nil {
 		return fmt.Errorf("CreateDBAccount %s: %s", username, err)
 	}

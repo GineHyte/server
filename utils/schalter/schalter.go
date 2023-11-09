@@ -276,13 +276,7 @@ func SchalterDataContains(SchalterData []SchalterStatus, widgetId string) int {
 
 func UpdateSchalterStatus(SchalterStatusRes SchalterStatus, widgetId ...string) error {
 	//db connection
-	DB_NAME := os.Getenv("DB_NAME")
-	DB_PASSWORD := os.Getenv("DB_PASSWORD")
-	DB_USERNAME := os.Getenv("DB_USERNAME")
-	DB_IP := os.Getenv("DB_IP")
-
-	db, err := sql.Open("mysql",
-		DB_USERNAME+":"+DB_PASSWORD+"@tcp("+DB_IP+":3306)/"+DB_NAME)
+	db, err := DBConnection()
 	if err != nil {
 		return fmt.Errorf("updateSchalterStatus: %s", err)
 	}
@@ -304,13 +298,7 @@ func UpdateSchalterStatus(SchalterStatusRes SchalterStatus, widgetId ...string) 
 
 func GetSchalterStatus(name string, widgetId ...string) (SchalterStatus, error) {
 	//db connection
-	DB_NAME := os.Getenv("DB_NAME")
-	DB_PASSWORD := os.Getenv("DB_PASSWORD")
-	DB_USERNAME := os.Getenv("DB_USERNAME")
-	DB_IP := os.Getenv("DB_IP")
-
-	db, err := sql.Open("mysql",
-		DB_USERNAME+":"+DB_PASSWORD+"@tcp("+DB_IP+":3306)/"+DB_NAME)
+	db, err := DBConnection()
 	if err != nil {
 		return SchalterStatus{}, fmt.Errorf("syncSchalterData: %s", err)
 	}

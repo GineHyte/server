@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"os"
 	"strconv"
 	"time"
 
@@ -18,17 +17,10 @@ import (
 var test = false
 
 func CheckSession(session_token string) (bool, error) {
-
 	log.Printf("CheckSession: %s\n", session_token)
 	//check if session token is valid
 	//db connection
-	DB_NAME := os.Getenv("DB_NAME")
-	DB_PASSWORD := os.Getenv("DB_PASSWORD")
-	DB_USERNAME := os.Getenv("DB_USERNAME")
-	DB_IP := os.Getenv("DB_IP")
-
-	db, err := sql.Open("mysql",
-		DB_USERNAME+":"+DB_PASSWORD+"@tcp("+DB_IP+":3306)/"+DB_NAME)
+	db, err := DBConnection()
 	if err != nil {
 		return false, fmt.Errorf("GetInfluxTokenFromSession %s: %s", session_token, err)
 	}
@@ -66,13 +58,7 @@ func RandomHex(n int) (string, error) {
 
 func SchalterDbTimer() {
 	//db connection
-	DB_NAME := os.Getenv("DB_NAME")
-	DB_PASSWORD := os.Getenv("DB_PASSWORD")
-	DB_USERNAME := os.Getenv("DB_USERNAME")
-	DB_IP := os.Getenv("DB_IP")
-
-	db, err := sql.Open("mysql",
-		DB_USERNAME+":"+DB_PASSWORD+"@tcp("+DB_IP+":3306)/"+DB_NAME)
+	db, err := DBConnection()
 	if err != nil {
 		return
 	}
@@ -120,13 +106,7 @@ func First[T, U any](val T, _ U) T {
 // TODO: replace all db connections with this function
 func DBConnection() (*sql.DB, error) {
 	//db connection
-	DB_NAME := os.Getenv("DB_NAME")
-	DB_PASSWORD := os.Getenv("DB_PASSWORD")
-	DB_USERNAME := os.Getenv("DB_USERNAME")
-	DB_IP := os.Getenv("DB_IP")
-
-	db, err := sql.Open("mysql",
-		DB_USERNAME+":"+DB_PASSWORD+"@tcp("+DB_IP+":3306)/"+DB_NAME)
+	db, err := DBConnection()
 	if err != nil {
 		return nil, fmt.Errorf("error opening db: %s", err)
 	}

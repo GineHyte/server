@@ -2,7 +2,6 @@ package Query
 
 import (
 	"bytes"
-	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -113,13 +112,7 @@ func QueryInfluxDB(session_token string, Query string) (QueryResponse, error) {
 func GetInfluxTokenFromSession(session_token string) (string, error) {
 	//get influxdb token from session token
 	//db connection
-	DB_NAME := os.Getenv("DB_NAME")
-	DB_PASSWORD := os.Getenv("DB_PASSWORD")
-	DB_USERNAME := os.Getenv("DB_USERNAME")
-	DB_IP := os.Getenv("DB_IP")
-
-	db, err := sql.Open("mysql",
-		DB_USERNAME+":"+DB_PASSWORD+"@tcp("+DB_IP+":3306)/"+DB_NAME)
+	db, err := DBConnection()
 	if err != nil {
 		return "", fmt.Errorf("GetInfluxTokenFromSession %s: %s", session_token, err)
 	}
